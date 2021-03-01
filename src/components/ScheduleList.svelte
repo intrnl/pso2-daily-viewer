@@ -18,13 +18,15 @@
 		let tz = region == 'JP' ? 'Asia/Tokyo' : region == 'GL' ? 'America/Los_Angeles' : null;
 
 		let start = Temporal.PlainDate.from(data.start).toZonedDateTime(tz);
-		let now = Temporal.PlainDate.from(date).toZonedDateTime(Temporal.now.timeZone()).withTimeZone(tz);
+		let now = Temporal.PlainDate.from(date).toZonedDateTime(tz);
 
 		let cycle = data.cycle;
 		let items = data.items;
 
 		let diff = now.since(start, { largestUnit: 'day', smallestUnit: 'day' }).days;
 		let day = (Math.abs(diff) % cycle) + 1;
+
+		console.log(type, day);
 
 		return items.filter((item) => item.schedule.includes(day));
 	}

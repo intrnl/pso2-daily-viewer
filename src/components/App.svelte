@@ -1,28 +1,39 @@
-<script context='module'>
-	function getDateString () {
-		let date = new Date();
-
-		let year = date.getFullYear();
-		let month = (date.getMonth() + 1).toString().padStart(2, '0');
-		let day = date.getDate().toString().padStart(2, '0');
-
-		return `${year}-${month}-${day}`;
-	}
-</script>
-
 <script>
+	import { Temporal } from 'proposal-temporal';
+
 	import ScheduleList from './ScheduleList.svelte';
 
 	let region = 'GL';
-	let date = getDateString();
+	let date = Temporal.now.plainDateISO();
+
+	function decrement () {
+		date = date.subtract({ days: 1 });
+	}
+
+	function increment () {
+		date = date.add({ days: 1 });
+	}
+
+	function today () {
+		date = Temporal.now.plainDateISO();
+	}
 </script>
 
 <section>
 	<select bind:value={region}>
-		<option value='GL'>Global</option>
-		<option value='JP'>Japanese</option>
+		<option value='GL'>Global [PT]</option>
+		<option value='JP'>Japanese [JST]</option>
 	</select>
-	<input type='date' bind:value={date} />
+</section>
+
+<section>
+	<button on:click={decrement}>Previous</button>
+	<button on:click={increment}>Next</button>
+	<button on:click={today}>Today</button>
+</section>
+
+<section>
+	<span>Showing {date.toLocaleString()}</span>
 </section>
 
 <section>
@@ -44,7 +55,12 @@
 </section>
 
 <style>
+	section + section {
+		margin-block-start: 10px;
+	}
+
 	h4 {
+		margin-block-start: 10px;
 		margin-block-end: 0;
 	}
 
