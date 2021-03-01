@@ -1,0 +1,14 @@
+{
+	"private": true,
+	"type": "module",
+	"name": "@intrnl/pso2-daily-viewer",
+	"dependencies": {
+		"proposal-temporal": "^0.7.0",
+		"svelte": "^3.34.0"
+	},
+	"devDependencies": {
+		"esbuild": "^0.8.53",
+		"svelte-hmr": "^0.12.6",
+		"vite": "^2.0.4"
+	}
+}
