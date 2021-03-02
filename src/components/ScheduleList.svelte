@@ -1,47 +1,24 @@
-<script context='module'>
-	let collator = new Intl.Collator();
-</script>
-
 <script>
 	import { Temporal } from 'proposal-temporal';
 
-	export let type;
+	export let data;
+
 	export let region;
+	export let tz;
 	export let date;
 
-	function fetchData () {
-		return fetch(`https://raw.githubusercontent.com/intrnl/pso2-daily-schedule/trunk/data/${type}.json`)
-			.then((resp) => resp.json());
-	}
+	$: items = data.items;
+	$: cycle = data.cycle;
 
-	function filterItems (data, region, date) {
-		let tz = region == 'JP' ? 'Asia/Tokyo' : region == 'GL' ? 'America/Los_Angeles' : null;
+	$: start = Temporal.PlainDate.from(data.start).toZonedDateTime(tz);
+	$: now = date.withTimeZone(tz);
 
-		let start = Temporal.PlainDate.from(data.start).toZonedDateTime(tz);
-		let now = Temporal.PlainDate.from(date).toZonedDateTime(tz);
+	$: diff = now.since(start, { largestUnit: 'day', smallestUnit: 'day' }).days;
+	$: day = (Math.abs(diff) % cycle) + 1;
 
-		let cycle = data.cycle;
-		let items = data.items;
-
-		let diff = now.since(start, { largestUnit: 'day', smallestUnit: 'day' }).days;
-		let day = (Math.abs(diff) % cycle) + 1;
-
-		console.log(type, day);
-
-		return items.filter((item) => item.schedule.includes(day));
-	}
-
-	$: promise = fetchData();
+	$: filtered_items = items.filter((item) => item.schedule.includes(day));
 </script>
 
-{#await promise}
-	<div>Fetching <code>{type}</code></div>
-{:then data}
-	{#each filterItems(data, region, date) as item}
-		<li>{item.name[region.toLowerCase()]}</li>
-	{/each}
-{:catch err}
-	<div>Failed to fetch <code>{type}</code></div>
-	<button on:click={fetchData}>Retry</button>
-{/await}
-
+{#each filtered_items as item}
+	<li>{item.name[region]}</li>
+{/each}

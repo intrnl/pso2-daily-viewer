@@ -3,8 +3,27 @@
 
 	import ScheduleList from './ScheduleList.svelte';
 
-	let region = 'GL';
-	let date = Temporal.now.plainDateISO();
+	function get (type) {
+		return fetch(`https://raw.githubusercontent.com/intrnl/pso2-daily-schedule/trunk/data/${type}.json`)
+			.then((resp) => resp.json());
+	}
+
+	function refetch () {
+		return Promise.all([
+			get('quest-exploration'),
+			get('quest-recommended'),
+			get('quest-level'),
+			get('orders-exploration'),
+			get('orders-daily'),
+			get('orders-extra'),
+		]);
+	}
+
+	let data = refetch();
+
+	let region = 'gl';
+	$: tz = region == 'jp' ? 'Asia/Tokyo' : region == 'gl' ? 'America/Los_Angeles' : null;
+	$: date = Temporal.now.zonedDateTimeISO(tz);
 
 	function decrement () {
 		date = date.subtract({ days: 1 });
@@ -15,14 +34,14 @@
 	}
 
 	function today () {
-		date = Temporal.now.plainDateISO();
+		date = Temporal.now.zonedDateTimeISO(tz);
 	}
 </script>
 
 <section>
 	<select bind:value={region}>
-		<option value='GL'>Global [PT]</option>
-		<option value='JP'>Japanese [JST]</option>
+		<option value='gl'>Global [PT]</option>
+		<option value='jp'>Japanese [JST]</option>
 	</select>
 </section>
 
@@ -33,26 +52,36 @@
 </section>
 
 <section>
-	<span>Showing {date.toLocaleString()}</span>
+	Showing {date.toLocaleString()}
 </section>
 
-<section>
-	<h4>Recommended Quests</h4>
-	<ul>
-		<ScheduleList type='quest-exploration' region={region} date={date} />
-		<ScheduleList type='quest-recommended' region={region} date={date} />
-		<ScheduleList type='quest-level' region={region} date={date} />
-	</ul>
-</section>
-
-<section>
-	<h4>Daily Orders</h4>
-	<ul>
-		<ScheduleList type='orders-exploration' region={region} date={date} />
-		<ScheduleList type='orders-extra' region={region} date={date} />
-		<ScheduleList type='orders-daily' region={region} date={date} />
-	</ul>
-</section>
+{#await data}
+	<section>
+		<span>Fetching data</span>
+	</section>
+{:then [q_exp, q_rec, q_lvl, o_exp, o_dly, o_ext]}
+	<section>
+		<h4>Recommended Quests</h4>
+		<ul>
+			<ScheduleList data={q_exp} region={region} tz={tz} date={date} />
+			<ScheduleList data={q_rec} region={region} tz={tz} date={date} />
+			<ScheduleList data={q_lvl} region={region} tz={tz} date={date} />
+		</ul>
+	</section>
+	<section>
+		<h4>Daily Orders</h4>
+		<ul>
+			<ScheduleList data={o_exp} region={region} tz={tz} date={date} />
+			<ScheduleList data={o_dly} region={region} tz={tz} date={date} />
+			<ScheduleList data={o_ext} region={region} tz={tz} date={date} />
+		</ul>
+	</section>
+{:catch err}
+	<section>
+		<div>Failed to fetch data</div>
+		<button on:click={data = refetch()}>Retry</button>
+	</section>
+{/await}
 
 <style>
 	section + section {
@@ -60,13 +89,12 @@
 	}
 
 	h4 {
-		margin-block-start: 10px;
-		margin-block-end: 0;
+		margin-block: 0;
 	}
 
 	ul {
-		margin: 0;
-		padding-inline-start: 22px;
+		margin-block: 0;
+		padding-inline: 22px;
 	}
 
 	:root {
